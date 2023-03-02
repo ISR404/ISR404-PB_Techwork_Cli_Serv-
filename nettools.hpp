@@ -10,6 +10,9 @@
 #include <netinet/in.h>
 
 #define BUF_SIZE 1024
+#define EXIT_COMMAND "/exit"
+
+bool is_connection_closed(const char* msg);
 
 int Socket(int domain, int type, int protocol);
 

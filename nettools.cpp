@@ -1,7 +1,16 @@
 #include "nettools.hpp"
 
 
-//class Client
+bool is_connection_closed(const char* msg)
+{
+    std::string operation = msg;
+    size_t search_status = operation.find(EXIT_COMMAND);
+    //std::cout << EXIT_COMMAND << std::endl;
+    if (search_status != 0)
+        return false;
+    return true;
+
+}
 
 
 int Socket(int domain, int type, int protocol)

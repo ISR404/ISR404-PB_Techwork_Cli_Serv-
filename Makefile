@@ -1,4 +1,4 @@
-all: clean client server
+all: client server
 
 client: client.o nettools.o
 	g++ client.o nettools.o -o client

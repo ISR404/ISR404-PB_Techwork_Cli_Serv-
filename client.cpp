@@ -1,13 +1,12 @@
 #include "nettools.hpp"
 #include <stdlib.h>
 
-#define BUF_SIZE 1024
-
 int main(int argc, char** argv)
 {
     if (argc != 3) 
     {
         std::cout << "Usage: ./client [IP] [port]" << std::endl;
+        exit(EXIT_FAILURE);
     }
 
     int sockfd = Socket(AF_INET, SOCK_STREAM, 0);
@@ -36,16 +35,25 @@ int main(int argc, char** argv)
         if (!session_online)
         {
             connection = Connect(sockfd, reinterpret_cast <struct sockaddr*>(&srv_addr), sizeof(srv_addr));
-            std::cout << "Session started, waiting for commands";
+            
+            Recv(sockfd, buf, BUF_SIZE, 0);
+            std::cout << buf << std::endl;
             session_online = true;
         }
         std::cout << std::endl << ">";
         std::cin.getline(buf, BUF_SIZE);
+        if (is_connection_closed(buf))
+        {
+            Send(sockfd, buf, BUF_SIZE, 0);
+            Recv(sockfd, buf, BUF_SIZE, 0);
+            std::cout << buf << std::endl;
+            close(connection);
+            session_online = false;
+            break;
+        }
         Send(sockfd, buf, BUF_SIZE, 0);
         Recv(sockfd, buf, BUF_SIZE, 0);
         std::cout << buf << std::endl;
-        close(connection);
-        break;
 
     }
     close(sockfd);
