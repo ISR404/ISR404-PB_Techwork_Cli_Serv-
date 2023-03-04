@@ -1,5 +1,6 @@
 #include "nettools.hpp"
 
+std::mutex mtx;
 
 bool is_connection_closed(const char* msg)
 {
@@ -88,4 +89,20 @@ int Connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
         exit(EXIT_FAILURE);
     }
     return res;
+}
+
+void ConnectHandler(int connect_sock)
+{
+    char buf[BUF_SIZE];
+    socklen_t size_buf = sizeof(buf);
+    while (true)
+    {
+        Recv(connect_sock, buf, size_buf, 0);
+        Send(connect_sock, buf, size_buf, 0);
+        mtx.lock();
+        std::cout << buf << " : " << connect_sock << std::endl;
+        mtx.unlock();
+    }
+    
+
 }
