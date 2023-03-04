@@ -1,0 +1,7 @@
+.vscode
+client.o
+server.o
+nettools.o
+server
+client
+sql_tables/init_tokens.sql
