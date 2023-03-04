@@ -1,6 +1,10 @@
 #include "nettools.hpp"
 #include <stdlib.h>
-//#include <thread>
+#include <thread>
+#include <pqxx/pqxx>
+
+#define PSQL_PASS "aboba" // Enter your postgres password here to connect to db (NOT READY)
+#define CONN_COUNT 20
 
 int main(int argc, char** argv)
 {
@@ -11,15 +15,12 @@ int main(int argc, char** argv)
     }
 
     
-    int cli_sockfd = Socket(AF_INET, SOCK_STREAM, 0);
-    sockaddr_in srv_addr;
-    //in_addr_t address = inet_addr(argv[1]);
+    int cli_sockfd;
+    int sock_counter = 0;
+    
+    cli_sockfd = Socket(AF_INET, SOCK_STREAM, 0);
 
-    /* if (address == INADDR_NONE)
-    {
-        std::cout << "Invalid address. Shutting down..." << std::endl;
-        exit(EXIT_FAILURE);
-    } */
+    sockaddr_in srv_addr;
 
     srv_addr.sin_addr.s_addr = INADDR_ANY;
     srv_addr.sin_family = AF_INET;
@@ -32,9 +33,34 @@ int main(int argc, char** argv)
     int connection;
     char buf[BUF_SIZE];
     bool session_online = false;
-    std::string input;
-    std::string received;
+    //std::string input;
+    //std::string received;
     socklen_t size_addr = sizeof(srv_addr);
+
+    //Connection to db testing
+    try
+    {
+        //int size_str = sizeof(str);
+        pqxx::connection postgres("dbname = postgres user = postgres password = aboba hostaddr = 127.0.0.1 port = 5432");
+        if (postgres.is_open())
+        {
+            std::cout << "Database " << postgres.dbname() << " connected successfully." << std::endl;
+        }
+        else
+        {
+            std::cout << "Can't open database." << std::endl;
+        }
+        postgres.close();
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << std::endl;
+        exit(EXIT_FAILURE);
+    }; 
+    
+    
+    
+    //end testing
 
     while (true)
     {
