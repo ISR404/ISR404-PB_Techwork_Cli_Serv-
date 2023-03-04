@@ -1,0 +1,6 @@
+server
+client
+server.o
+client.o
+nettools.o
+sql_tables/
