@@ -1,27 +1,30 @@
-DIR_SRC = "src"
-DIR_OBJ = "obj"
+CPP_CMP = g++
 
-NAME_CLIENT = "client"
-NAME_SERVER = "server"
+DIR_SRC = src
+DIR_OBJ = obj
 
-L_LIBS = "-lpqxx -lpq"
+NAME_CLIENT = client
+NAME_SERVER = server
+
+L_LIBS = -lpqxx -lpq
+
 
 all: ${NAME_CLIENT} ${NAME_SERVER}
 
 ${NAME_CLIENT}: ${NAME_CLIENT}.o nettools.o
-	g++ -o ${NAME_CLIENT} ${NAME_CLIENT}.o nettools.o
+	${CPP_CMP} -o ${NAME_CLIENT} ./${DIR_OBJ}/${NAME_CLIENT}.o ./${DIR_OBJ}/nettools.o
 
 ${NAME_SERVER}: ${NAME_SERVER}.o nettools.o
-	g++ -o ${NAME_SERVER} ${NAME_SERVER}.o nettools.o ${L_LIBS}
+	${CPP_CMP} -o ${NAME_SERVER} ./${DIR_OBJ}/${NAME_SERVER}.o ./${DIR_OBJ}/nettools.o ${L_LIBS}
 
 ${NAME_CLIENT}.o: 
-	g++ -c ./${DIR_SRC}/client.cpp -o ./${DIR_OBJ}/${NAME_CLIENT}.o 
+	${CPP_CMP} -Iheaders -c ./${DIR_SRC}/client.cpp -o ./${DIR_OBJ}/${NAME_CLIENT}.o 
 
 ${NAME_SERVER}.o:
-	g++ -c ./${DIR_SRC}/server.cpp -o ./${DIR_OBJ}/${NAME_SERVER}.o 
+	${CPP_CMP} -Iheaders -c ./${DIR_SRC}/server.cpp -o ./${DIR_OBJ}/${NAME_SERVER}.o 
 
 nettools.o:
-	g++ -c nettools.cpp -o ./${DIR_OBJ}/nettools.o 
+	${CPP_CMP} -Iheaders -c ./${DIR_SRC}/nettools.cpp -o ./${DIR_OBJ}/nettools.o 
 
 clean:
 	rm ${NAME_CLIENT} ${NAME_SERVER} ./${DIR_OBJ}/*.o

@@ -1,4 +1,4 @@
-#include "headers/nettools.hpp"
+#include "nettools.hpp"
 #include <stdlib.h>
 
 int main(int argc, char** argv)
