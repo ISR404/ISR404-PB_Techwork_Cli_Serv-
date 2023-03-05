@@ -1,4 +1,5 @@
 #include "nettools.hpp"
+#include "srvcmd.hpp"
 
 std::mutex mtx;
 
@@ -96,18 +97,61 @@ void ServerConnectHandler(int connect_sock, int* active_conn_slot)
 {
     char buf[BUF_SIZE];
     socklen_t size_buf = sizeof(buf);
-    bool session_online = true;
+    bool is_auth = false;
     int conn_status = 0;
+    std::string login;
+    std::string password;
+    //int cmd_status;
     while (true)
     {
-        conn_status = recv(connect_sock, buf, size_buf, 0);
-        if (conn_status == -1)
+        conn_status = Recv(connect_sock, buf, size_buf, 0);
+        
+        if (!is_auth)
         {
-            session_online = false;
-            close(connect_sock);
-            *active_conn_slot = 0;
-            break;
+            if (GetCommandStatus != STATUS_LOG)
+            {
+                strcpy(buf, "Enter login. Command: login <username>\n");
+                Send(connect_sock, buf, size_buf, 0);
+                continue;
+            }
+            else 
+            {
+                login = GetLogin(buf);
+                strcpy(buf, "Now enter password. Command: password <password>\n");
+                Send(connect_sock, buf, size_buf, 0);
+                Recv(connect_sock, buf, size_buf, 0);
+
+                if (GetCommandStatus(buf) != STATUS_PASSWD)
+                {
+                    strcpy(buf, "Auth failed. Try again from login.\n");
+                    Send(connect_sock, buf, size_buf, 0);
+                    continue;
+                }
+                else
+                {
+                    password = GetPassword(buf);
+                    char* ptr_login = login;
+                    char* ptr_password = password;
+                    if (IsFoundAuthDB(ptr_login, ptr_password))
+                    {
+                        is_auth = true;
+                        strcpy(buf, "You authed successfully\n");
+                        Send(connect_sock, buf, size_buf, 0);
+                    }
+                    else
+                    {
+                        strcpy(buf, "Account not found!\n");
+                        Send(connect_sock, buf, size_buf, 0);
+                        continue;
+                    }
+                }
+
+            }
         }
+        
+
+        
+
         if (is_connection_closed(buf))
         {
             strcpy(buf, "Connection closed.\n");
@@ -119,7 +163,7 @@ void ServerConnectHandler(int connect_sock, int* active_conn_slot)
         conn_status = send(connect_sock, buf, size_buf, MSG_NOSIGNAL);
         if (conn_status == -1)
         {
-            session_online = false;
+            //session_online = false;
             close(connect_sock);
             *active_conn_slot = 0;
             break;

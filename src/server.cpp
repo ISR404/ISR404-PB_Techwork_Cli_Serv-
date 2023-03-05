@@ -1,7 +1,6 @@
-#include "headers/nettools.hpp"
+#include "nettools.hpp"
 #include <stdlib.h>
 #include <thread>
-#include <pqxx/pqxx>
 
 #define PSQL_PASS "aboba" // Enter your postgres password here to connect to db (NOT READY)
 #define CONN_COUNT 20
@@ -17,8 +16,6 @@ int main(int argc, char** argv)
     
     int cli_sockfd = Socket(AF_INET, SOCK_STREAM, 0);
     
-    
-    //cli_sockfd = Socket(AF_INET, SOCK_STREAM, 0);
 
     sockaddr_in srv_addr;
 
@@ -34,25 +31,7 @@ int main(int argc, char** argv)
     
 
     //Connection to db testing
-    try
-    {
-        //int size_str = sizeof(str);
-        pqxx::connection postgres("dbname = postgres user = postgres password = aboba hostaddr = 127.0.0.1 port = 5432");
-        if (postgres.is_open())
-        {
-            std::cout << "Database " << postgres.dbname() << " connected successfully." << std::endl;
-        }
-        else
-        {
-            std::cout << "Can't open database." << std::endl;
-        }
-        postgres.close();
-    }
-    catch (const std::exception &e)
-    {
-        std::cerr << e.what() << std::endl;
-        exit(EXIT_FAILURE);
-    }; 
+    
     
     int connections[CONN_COUNT];
     int sock_counter = 0;

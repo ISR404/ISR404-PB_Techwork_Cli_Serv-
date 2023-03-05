@@ -1,5 +1,5 @@
 #ifndef NETTOOLS_HPP_INCLUDED
-#define NETTOLS_HPP_INCLUDED
+#define NETTOOLS_HPP_INCLUDED
 
 #include <iostream>
 #include <arpa/inet.h>
