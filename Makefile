@@ -1,19 +1,27 @@
-all: client server
+DIR_SRC = "src"
+DIR_OBJ = "obj"
 
-client: client.o nettools.o
-	g++ -o client client.o nettools.o 
+NAME_CLIENT = "client"
+NAME_SERVER = "server"
 
-server: server.o nettools.o
-	g++ -o server server.o nettools.o -lpqxx -lpq
+L_LIBS = "-lpqxx -lpq"
 
-client.o: 
-	g++ -c client.cpp -o client.o 
+all: ${NAME_CLIENT} ${NAME_SERVER}
 
-server.o:
-	g++ -c server.cpp -o server.o 
+${NAME_CLIENT}: ${NAME_CLIENT}.o nettools.o
+	g++ -o ${NAME_CLIENT} ${NAME_CLIENT}.o nettools.o
+
+${NAME_SERVER}: ${NAME_SERVER}.o nettools.o
+	g++ -o ${NAME_SERVER} ${NAME_SERVER}.o nettools.o ${L_LIBS}
+
+${NAME_CLIENT}.o: 
+	g++ -c ./${DIR_SRC}/client.cpp -o ./${DIR_OBJ}/${NAME_CLIENT}.o 
+
+${NAME_SERVER}.o:
+	g++ -c ./${DIR_SRC}/server.cpp -o ./${DIR_OBJ}/${NAME_SERVER}.o 
 
 nettools.o:
-	g++ -c nettools.cpp -o nettools.o 
+	g++ -c nettools.cpp -o ./${DIR_OBJ}/nettools.o 
 
 clean:
-	rm client server *.o
+	rm ${NAME_CLIENT} ${NAME_SERVER} ./${DIR_OBJ}/*.o

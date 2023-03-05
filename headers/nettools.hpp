@@ -30,6 +30,6 @@ ssize_t Recv(int sockfd, void *buf, size_t len, int flags);
 
 int Connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 
-void ConnectHandler(int connect_sock);
+void ServerConnectHandler(int connect_sock, int* active_conn_slot);
 
 #endif

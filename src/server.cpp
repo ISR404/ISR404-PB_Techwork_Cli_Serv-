@@ -1,4 +1,4 @@
-#include "nettools.hpp"
+#include "headers/nettools.hpp"
 #include <stdlib.h>
 #include <thread>
 #include <pqxx/pqxx>
@@ -58,29 +58,34 @@ int main(int argc, char** argv)
     int sock_counter = 0;
     char buf[BUF_SIZE];
     bool session_online[CONN_COUNT];
-    //std::string input;
-    //std::string received;
     socklen_t size_addr = sizeof(srv_addr);
     int new_connection;
     
     //end testing
     
 
-    
-    for (int i = 0; i < CONN_COUNT; i++)
+    while (true)
     {
-        Listen(cli_sockfd, CONN_COUNT);
-        new_connection = Accept(cli_sockfd, reinterpret_cast <struct sockaddr*>(&srv_addr), &size_addr);
-        std::strcpy(buf, "Session started, waiting for commands.");
-        std::cout << "Connection accepted from client with IP " << inet_ntoa(srv_addr.sin_addr) << std::endl;
-        Send(new_connection, buf, BUF_SIZE, 0);
-        connections[sock_counter] = new_connection;
-        sock_counter++;
-        std::thread th(ConnectHandler, new_connection);
-        th.detach();
-        //session_online[sock_counter] = true;
+        for (int i = 0; i < CONN_COUNT; i++)
+        {
+            if (connections[i] == 0)
+            {
+                Listen(cli_sockfd, CONN_COUNT);
+                new_connection = Accept(cli_sockfd, reinterpret_cast <struct sockaddr*>(&srv_addr), &size_addr);
+                std::strcpy(buf, "Session started, waiting for commands.");
+                std::cout << "Connection accepted from client with IP " << inet_ntoa(srv_addr.sin_addr) << std::endl;
+                Send(new_connection, buf, BUF_SIZE, 0);
+                connections[i] = new_connection;
+                //sock_counter++;
+                std::thread th(ServerConnectHandler, new_connection, connections + i);
+                th.detach();
+            }
+            
+            //session_online[sock_counter] = true;
 
+        }
     }
+    
     
         
     close(cli_sockfd);   

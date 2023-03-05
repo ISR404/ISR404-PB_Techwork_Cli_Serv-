@@ -86,22 +86,48 @@ int Connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
     if (res == -1)
     {
         std::cout << "Connection error!" << std::endl;
+        std::cout << "Error code: " << errno << std::endl;
         exit(EXIT_FAILURE);
     }
     return res;
 }
 
-void ConnectHandler(int connect_sock)
+void ServerConnectHandler(int connect_sock, int* active_conn_slot)
 {
     char buf[BUF_SIZE];
     socklen_t size_buf = sizeof(buf);
+    bool session_online = true;
+    int conn_status = 0;
     while (true)
     {
-        Recv(connect_sock, buf, size_buf, 0);
-        Send(connect_sock, buf, size_buf, 0);
+        conn_status = recv(connect_sock, buf, size_buf, 0);
+        if (conn_status == -1)
+        {
+            session_online = false;
+            close(connect_sock);
+            *active_conn_slot = 0;
+            break;
+        }
+        if (is_connection_closed(buf))
+        {
+            strcpy(buf, "Connection closed.\n");
+            Send(connect_sock, buf, size_buf, 0);
+            close(connect_sock);
+            *active_conn_slot = 0;
+            break;
+        }
+        conn_status = send(connect_sock, buf, size_buf, MSG_NOSIGNAL);
+        if (conn_status == -1)
+        {
+            session_online = false;
+            close(connect_sock);
+            *active_conn_slot = 0;
+            break;
+        }
         mtx.lock();
         std::cout << buf << " : " << connect_sock << std::endl;
         mtx.unlock();
+        conn_status = 0;
     }
     
 
