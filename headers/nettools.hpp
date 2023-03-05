@@ -1,5 +1,5 @@
 #ifndef NETTOOLS_HPP_INCLUDED
-#define NETTOLS_HPP_INCLUDED
+#define NETTOOLS_HPP_INCLUDED
 
 #include <iostream>
 #include <arpa/inet.h>
@@ -8,6 +8,8 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
+#include <mutex>
+
 
 #define BUF_SIZE 1024
 #define EXIT_COMMAND "/exit"
@@ -27,5 +29,7 @@ ssize_t Send(int sockfd, const void *buf, size_t len, int flags);
 ssize_t Recv(int sockfd, void *buf, size_t len, int flags);
 
 int Connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+
+void ServerConnectHandler(int connect_sock, int* active_conn_slot);
 
 #endif
