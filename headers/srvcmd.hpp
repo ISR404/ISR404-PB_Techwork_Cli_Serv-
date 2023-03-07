@@ -32,6 +32,8 @@ std::string GetPassword(std::string msg);
 
 bool IsFoundAuthDB(std::string login, std::string password, std::string& db_conn_str);
 
+bool IsEnoughTokensDB(std::string login, std::string password, const std::string& db_conn_str);
+
 void ServerConnectHandler(const int connect_sock, int* active_conn_slot, const std::string& db_conn_str);
 
 void FillLogDataDB(std::string &conn_string);

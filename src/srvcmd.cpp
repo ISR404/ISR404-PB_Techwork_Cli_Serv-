@@ -1,23 +1,22 @@
 #include "srvcmd.hpp"
 #include "nettools.hpp"
 
-std::mutex mtx;
 
 int GetCommandStatus(const char* msg)
 {
     std::string operation = msg;
     int search_status; 
     
-    search_status = operation.find(CMD_LOGIN/*, 0, sizeof(CMD_LOGIN)/sizeof(char)*/);
+    search_status = operation.find(CMD_LOGIN);
     if (search_status == 0)
         return STATUS_LOG;
-    search_status = operation.find(CMD_PASSWD/*, 0, sizeof(CMD_LOGIN)/sizeof(char)*/);
+    search_status = operation.find(CMD_PASSWD);
     if (search_status == 0)
         return STATUS_PASSWD;
-    search_status = operation.find(CMD_LOGOUT/*, 0, sizeof(CMD_LOGIN)/sizeof(char)*/);
+    search_status = operation.find(CMD_LOGOUT);
     if (search_status == 0)
         return STATUS_LOGOUT;
-    search_status = operation.find(CMD_CALC/*, 0, sizeof(CMD_LOGIN)/sizeof(char)*/);
+    search_status = operation.find(CMD_CALC);
     if (search_status == 0)
         return STATUS_CALC;
     return STATUS_INV;
@@ -39,27 +38,27 @@ std::string GetPassword(std::string msg)
     return password;
 }
 
+std::string GetCalcExpression(std::string msg)
+{
+    size_t pos = msg.find_first_of(' ');
+    size_t pos_enter = msg.find_first_of('\n');
+    std::string expression = msg.substr(pos + 1, pos_enter);
+    return expression;
+}
+
 bool IsFoundAuthDB(std::string login, std::string password, const std::string& db_conn_str)
 {
     size_t log_size = login.size();
     size_t pass_size = password.size();
-    //const char* login_cstr = login.c_str();
-    //const char* pass_cstr = password.c_str();
-    //char str_char_sql[] = ;
     size_t sql_str_size = sizeof("SELECT * FROM Users WHERE (username = \'\' AND passwd = \'\');");
     size_t dynamic_size = sql_str_size + log_size + pass_size;
-    std::cout << log_size << " " << pass_size << " " << sql_str_size << std::endl;
     try
     {
         pqxx::connection postgres(db_conn_str);
         if (postgres.is_open())
         {
-            //std::cout << "Database " << postgres.dbname() << " connected successfully." << std::endl;
             char* sql_search = (char*)malloc(sizeof(char) * dynamic_size + 16);
-            snprintf(sql_search, /*(sql_str_size + log_size + pass_size + 18)*/ dynamic_size + 16, "SELECT username passwd FROM Users WHERE (username = \'%s\' AND passwd = \'%s\');", login.c_str(), password.c_str());
-            std::cout << login.c_str() << " " << password.c_str() << std::endl;
-            std::cout << sql_search << std::endl;
-            //std::string sql_str = std::format("SELECT * FROM Users WHERE (username = \'{}\' AND passwd = \'{}\');", login, password);
+            snprintf(sql_search, dynamic_size + 16, "SELECT username passwd FROM Users WHERE (username = \'%s\' AND passwd = \'%s\');", login.c_str(), password.c_str());
             
             pqxx::nontransaction NTO(postgres);
             pqxx::result rslt(NTO.exec(sql_search));
@@ -89,85 +88,152 @@ bool IsFoundAuthDB(std::string login, std::string password, const std::string& d
     return false;
 }
 
+bool IsEnoughTokensDB(std::string login, std::string password, const std::string& db_conn_str)
+{
+    size_t log_size = login.size();
+    size_t pass_size = password.size();
+    size_t sql_str_size = sizeof("SELECT * FROM Users WHERE (username = \'\' AND passwd = \'\');");
+    size_t dynamic_size = sql_str_size + log_size + pass_size;
+    try
+    {
+        pqxx::connection postgres(db_conn_str);
+        if (postgres.is_open())
+        {
+            char* sql_search = (char*)malloc(sizeof(char) * dynamic_size + 16);
+            snprintf(sql_search, dynamic_size + 16, "SELECT username passwd FROM Users WHERE (username = \'%s\' AND passwd = \'%s\');", login.c_str(), password.c_str());
+            
+            pqxx::nontransaction NTO(postgres);
+            pqxx::result rslt(NTO.exec(sql_search));
+            pqxx::result::const_iterator row = rslt.begin();
+            free(sql_search);
+            if (row[3].as<int>() > 0)
+            {
+                postgres.close();
+                return true;
+            }
+            else
+            {
+                
+                postgres.close();
+                return false;
+            }
+        }
+        else
+        {
+            std::cout << "Can't open database." << std::endl;
+        }
+        
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << std::endl;
+        exit(EXIT_FAILURE);
+    }; 
+    return false;
+}
+
 
 void ServerConnectHandler(const int connect_sock, int* active_conn_slot, const std::string& db_conn_str)
 {
     char buf[BUF_SIZE];
     socklen_t size_buf = sizeof(buf);
     bool is_auth = false;
-    int conn_status = 0;
     std::string login;
     std::string password;
     //int cmd_status;
     while (true)
     {
-        conn_status = Recv(connect_sock, buf, size_buf, 0);
+        Recv(connect_sock, buf, size_buf, 0);
         
         if (!is_auth)
         {
-            if (GetCommandStatus(buf) != STATUS_LOG)
+            if (is_connection_closed(buf))
             {
-                std::cout << GetCommandStatus(buf) << std::endl;
+                strcpy(buf, "Connection closed.\n");
+                send(connect_sock, buf, size_buf, MSG_NOSIGNAL);
+                close(connect_sock);
+                *active_conn_slot = 0;
+                break;
+            }
+            else if (GetCommandStatus(buf) != STATUS_LOG)
+            {
+                //std::cout << GetCommandStatus(buf) << std::endl;
                 strcpy(buf, "Enter login. Command: login <username>\n");
-                Send(connect_sock, buf, size_buf, 0);
+                send(connect_sock, buf, size_buf, MSG_NOSIGNAL);
                 continue;
             }
             else 
             {
                 login = GetLogin(buf);
                 strcpy(buf, "Now enter password. Command: password <password>\n");
-                Send(connect_sock, buf, size_buf, 0);
+                send(connect_sock, buf, size_buf, MSG_NOSIGNAL);
                 Recv(connect_sock, buf, size_buf, 0);
 
                 if (GetCommandStatus(buf) != STATUS_PASSWD)
                 {
                     strcpy(buf, "Auth failed. Try again from login.\n");
-                    Send(connect_sock, buf, size_buf, 0);
+                    send(connect_sock, buf, size_buf, MSG_NOSIGNAL);
                     continue;
                 }
                 else
                 {
                     password = GetPassword(buf);
-                    //char* ptr_login = login;
-                    //char* ptr_password = password;
                     if (IsFoundAuthDB(login, password, db_conn_str))
                     {
                         is_auth = true;
-                        strcpy(buf, "You authed successfully\n");
-                        Send(connect_sock, buf, size_buf, 0);
+                        strcpy(buf, "You authed successfully. Now you can use \"logout\" and \"calc\" options.\n");
+                        send(connect_sock, buf, size_buf, MSG_NOSIGNAL);
+                        continue;
                     }
                     else
                     {
-                        strcpy(buf, "Account not found!\n");
-                        Send(connect_sock, buf, size_buf, 0);
+                        strcpy(buf, "Account not found.\n");
+                        send(connect_sock, buf, size_buf, MSG_NOSIGNAL);
                         continue;
                     }
                 }
 
             }
         }
-        
 
-        if (is_connection_closed(buf))
+        int com_status = GetCommandStatus(buf);
+        if (com_status == STATUS_LOGOUT)
+        {
+            is_auth = false;
+            strcpy(buf, "You logged out.\n");
+            send(connect_sock, buf, size_buf, MSG_NOSIGNAL);
+            continue;
+        }
+        else if (com_status == STATUS_CALC)
+        {
+            //DO MATH
+            if (IsEnoughTokensDB)
+            {
+                strcpy(buf, "You have enough tokens to calculate values. NOW YOU KNOW MATH PADAVAN!\n");
+                send(connect_sock, buf, size_buf, MSG_NOSIGNAL);
+            }
+            else
+            {
+                strcpy(buf, "Enough is not ENOUGH!\n");
+                send(connect_sock, buf, size_buf, MSG_NOSIGNAL);
+            }
+            continue;
+        }
+        else if (is_connection_closed(buf))
         {
             strcpy(buf, "Connection closed.\n");
-            Send(connect_sock, buf, size_buf, 0);
+            send(connect_sock, buf, size_buf, MSG_NOSIGNAL);
             close(connect_sock);
             *active_conn_slot = 0;
             break;
         }
-        conn_status = send(connect_sock, buf, size_buf, MSG_NOSIGNAL);
-        if (conn_status == -1)
+        else 
         {
-            //session_online = false;
-            close(connect_sock);
-            *active_conn_slot = 0;
-            break;
+            strcpy(buf, "Invalid command.\n");
+            send(connect_sock, buf, size_buf, MSG_NOSIGNAL);
+            continue;
         }
-        mtx.lock();
-        std::cout << buf << " : " << connect_sock << std::endl;
-        mtx.unlock();
-        conn_status = 0;
+
     }
     
 
