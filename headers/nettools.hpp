@@ -8,7 +8,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
-#include <mutex>
+#include <stdlib.h>
 
 
 #define BUF_SIZE 1024
@@ -29,7 +29,5 @@ ssize_t Send(int sockfd, const void *buf, size_t len, int flags);
 ssize_t Recv(int sockfd, void *buf, size_t len, int flags);
 
 int Connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
-
-void ServerConnectHandler(int connect_sock, int* active_conn_slot);
 
 #endif

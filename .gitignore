@@ -1,7 +1,5 @@
 .vscode
-client.o
-server.o
-nettools.o
+obj/*.o
 server
 client
 sql_tables/init_tokens.sql

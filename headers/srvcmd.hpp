@@ -3,6 +3,7 @@
 
 #include <pqxx/pqxx>
 #include <iostream>
+#include <mutex>
 
 #define CMD_LOGIN "login"
 #define CMD_PASSWD "password"
@@ -18,10 +19,10 @@
 /* 
   Returns values from -1 to 3, where 
   -1 (STATUS_INV) - invalid command
-   0 (STATUS_LOG)- login command,
-   1 (STATUS_PASSWD)- password command,
-   2 (STATUS_LOGOUT)- logout command,
-   3 (STATUS_CALC)- calc command.
+   0 (STATUS_LOG) - login command,
+   1 (STATUS_PASSWD) - password command,
+   2 (STATUS_LOGOUT) - logout command,
+   3 (STATUS_CALC) - calc command.
 */
 int GetCommandStatus(const char* msg);
 
@@ -29,6 +30,10 @@ std::string GetLogin(std::string msg);
 
 std::string GetPassword(std::string msg);
 
-bool IsFoundAuthDB(std::string login, std::string password);
+bool IsFoundAuthDB(std::string login, std::string password, std::string& db_conn_str);
+
+void ServerConnectHandler(const int connect_sock, int* active_conn_slot, const std::string& db_conn_str);
+
+void FillLogDataDB(std::string &conn_string);
 
 #endif

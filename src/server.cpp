@@ -1,8 +1,9 @@
 #include "nettools.hpp"
+#include "srvcmd.hpp"
 #include <stdlib.h>
 #include <thread>
 
-#define PSQL_PASS "aboba" // Enter your postgres password here to connect to db (NOT READY)
+
 #define CONN_COUNT 20
 
 int main(int argc, char** argv)
@@ -28,6 +29,9 @@ int main(int argc, char** argv)
     Bind(cli_sockfd, reinterpret_cast<struct sockaddr*>(&srv_addr), sizeof(srv_addr));
     
 
+    std::string db_conn_str;
+    FillLogDataDB(db_conn_str);
+    //std::cout << db_conn_str << std::endl;
     
 
     //Connection to db testing
@@ -56,7 +60,7 @@ int main(int argc, char** argv)
                 Send(new_connection, buf, BUF_SIZE, 0);
                 connections[i] = new_connection;
                 //sock_counter++;
-                std::thread th(ServerConnectHandler, new_connection, connections + i);
+                std::thread th(ServerConnectHandler, new_connection, connections + i, db_conn_str);
                 th.detach();
             }
             
