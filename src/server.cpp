@@ -31,11 +31,6 @@ int main(int argc, char** argv)
 
     std::string db_conn_str;
     FillLogDataDB(db_conn_str);
-    //std::cout << db_conn_str << std::endl;
-    
-
-    //Connection to db testing
-    
     
     int connections[CONN_COUNT];
     int sock_counter = 0;
@@ -44,9 +39,6 @@ int main(int argc, char** argv)
     socklen_t size_addr = sizeof(srv_addr);
     int new_connection;
     
-    //end testing
-    
-
     while (true)
     {
         for (int i = 0; i < CONN_COUNT; i++)
@@ -59,25 +51,14 @@ int main(int argc, char** argv)
                 std::cout << "Connection accepted from client with IP " << inet_ntoa(srv_addr.sin_addr) << std::endl;
                 Send(new_connection, buf, BUF_SIZE, 0);
                 connections[i] = new_connection;
-                //sock_counter++;
                 std::thread th(ServerConnectHandler, new_connection, connections + i, db_conn_str);
                 th.detach();
             }
-            
-            //session_online[sock_counter] = true;
 
         }
     }
-    
-    
-        
+      
     close(cli_sockfd);   
-        
-        
-        //std::cout << buf << std::endl;
-        //break;
-
-    
-    
+ 
 }
 

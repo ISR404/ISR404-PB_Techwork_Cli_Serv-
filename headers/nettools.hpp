@@ -14,6 +14,9 @@
 #define BUF_SIZE 1024
 #define EXIT_COMMAND "/exit"
 
+/*
+    Function that finds EXIT_COMMAND in char* msg. When finds - closes connection and shuts down client app.
+*/
 bool is_connection_closed(const char* msg);
 
 int Socket(int domain, int type, int protocol);

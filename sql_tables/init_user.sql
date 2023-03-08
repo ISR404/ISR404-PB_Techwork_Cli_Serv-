@@ -4,3 +4,5 @@ CREATE TABLE Users(
     passwd varchar(40) not null,
     tokens int not null
 );
+
+INSERT INTO Users(username, passwd, tokens) VALUES('test_user', 'test_password', 10);

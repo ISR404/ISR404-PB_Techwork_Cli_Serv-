@@ -22,6 +22,12 @@ int GetCommandStatus(const char* msg)
     return STATUS_INV;
 }
 
+auto GetMathResult(const char* msg)
+{
+    std::string exp = GetCalcExpression(msg);
+    return 0;
+}
+
 std::string GetLogin(std::string msg)
 {
     size_t pos = msg.find_first_of(' ');
@@ -88,11 +94,11 @@ bool IsFoundAuthDB(std::string login, std::string password, const std::string& d
     return false;
 }
 
-bool IsEnoughTokensDB(std::string login, std::string password, const std::string& db_conn_str)
+bool IsEnoughTokensDB(std::string login, std::string password, const std::string& db_conn_str, int& tokens)
 {
     size_t log_size = login.size();
     size_t pass_size = password.size();
-    size_t sql_str_size = sizeof("SELECT * FROM Users WHERE (username = \'\' AND passwd = \'\');");
+    size_t sql_str_size = sizeof("SELECT tokens FROM Users WHERE (username = \'\' AND passwd = \'\');");
     size_t dynamic_size = sql_str_size + log_size + pass_size;
     try
     {
@@ -100,13 +106,14 @@ bool IsEnoughTokensDB(std::string login, std::string password, const std::string
         if (postgres.is_open())
         {
             char* sql_search = (char*)malloc(sizeof(char) * dynamic_size + 16);
-            snprintf(sql_search, dynamic_size + 16, "SELECT username passwd FROM Users WHERE (username = \'%s\' AND passwd = \'%s\');", login.c_str(), password.c_str());
+            snprintf(sql_search, dynamic_size + 16, "SELECT tokens FROM Users WHERE (username = \'%s\' AND passwd = \'%s\');", login.c_str(), password.c_str());
             
             pqxx::nontransaction NTO(postgres);
             pqxx::result rslt(NTO.exec(sql_search));
             pqxx::result::const_iterator row = rslt.begin();
             free(sql_search);
-            if (row[3].as<int>() > 0)
+            tokens = row[0].as<int>();
+            if (tokens > 0)
             {
                 postgres.close();
                 return true;
@@ -132,6 +139,37 @@ bool IsEnoughTokensDB(std::string login, std::string password, const std::string
     return false;
 }
 
+void DecreaseAccountTokens(std::string login, std::string password, const std::string& db_conn_str, int tokens)
+{
+    size_t log_size = login.size();
+    size_t pass_size = password.size();
+    size_t sql_str_size = sizeof("Update Users SET tokens = WHERE (username = \'\' AND passwd = \'\');");
+    size_t dynamic_size = sql_str_size + log_size + pass_size + 2;
+    try
+    {
+        pqxx::connection postgres(db_conn_str);
+        if (postgres.is_open())
+        {
+            char* sql_search = (char*)malloc(sizeof(char) * dynamic_size);
+            tokens -= 1;
+            snprintf(sql_search, dynamic_size, "UPDATE Users SET tokens = %d WHERE (username = \'%s\' AND passwd = \'%s\');", tokens, login.c_str(), password.c_str());
+            
+            pqxx::nontransaction NTO(postgres);
+            pqxx::result rslt(NTO.exec(sql_search));
+            free(sql_search);
+        }
+        else
+        {
+            std::cout << "Can't open database." << std::endl;
+        }
+        
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << std::endl;
+        exit(EXIT_FAILURE);
+    }; 
+}
 
 void ServerConnectHandler(const int connect_sock, int* active_conn_slot, const std::string& db_conn_str)
 {
@@ -140,7 +178,6 @@ void ServerConnectHandler(const int connect_sock, int* active_conn_slot, const s
     bool is_auth = false;
     std::string login;
     std::string password;
-    //int cmd_status;
     while (true)
     {
         Recv(connect_sock, buf, size_buf, 0);
@@ -157,7 +194,6 @@ void ServerConnectHandler(const int connect_sock, int* active_conn_slot, const s
             }
             else if (GetCommandStatus(buf) != STATUS_LOG)
             {
-                //std::cout << GetCommandStatus(buf) << std::endl;
                 strcpy(buf, "Enter login. Command: login <username>\n");
                 send(connect_sock, buf, size_buf, MSG_NOSIGNAL);
                 continue;
@@ -207,14 +243,16 @@ void ServerConnectHandler(const int connect_sock, int* active_conn_slot, const s
         else if (com_status == STATUS_CALC)
         {
             //DO MATH
-            if (IsEnoughTokensDB)
+            int tokens;
+            if (IsEnoughTokensDB(login, password, db_conn_str, tokens))
             {
-                strcpy(buf, "You have enough tokens to calculate values. NOW YOU KNOW MATH PADAVAN!\n");
+                DecreaseAccountTokens(login, password, db_conn_str, tokens);
+                strcpy(buf, "1 token was wasted. *DOIN SOME MATH*!\n");
                 send(connect_sock, buf, size_buf, MSG_NOSIGNAL);
             }
             else
             {
-                strcpy(buf, "Enough is not ENOUGH!\n");
+                strcpy(buf, "Enough is ENOUGH!\n");
                 send(connect_sock, buf, size_buf, MSG_NOSIGNAL);
             }
             continue;

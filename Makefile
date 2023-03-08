@@ -23,7 +23,7 @@ ${NAME_CLIENT}.o: nettools.o
 ${NAME_SERVER}.o: nettools.o srvcmd.o
 	${CPP_CMP} -Iheaders -c ./${DIR_SRC}/server.cpp -o ./${DIR_OBJ}/${NAME_SERVER}.o 
 
-srvcmd.o: nettools.o
+srvcmd.o: nettools.o 
 	${CPP_CMP} -Iheaders -c ./${DIR_SRC}/srvcmd.cpp -o ./${DIR_OBJ}/srvcmd.o 
 
 nettools.o:
