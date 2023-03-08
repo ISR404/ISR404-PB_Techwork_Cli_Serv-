@@ -26,8 +26,11 @@ ${NAME_SERVER}.o: nettools.o srvcmd.o
 srvcmd.o: nettools.o 
 	${CPP_CMP} -Iheaders -c ./${DIR_SRC}/srvcmd.cpp -o ./${DIR_OBJ}/srvcmd.o 
 
-nettools.o:
+nettools.o: mkdirobj
 	${CPP_CMP} -Iheaders -c ./${DIR_SRC}/nettools.cpp -o ./${DIR_OBJ}/nettools.o 
 
+mkdirobj:
+	mkdir ${DIR_OBJ}
+
 clean:
-	rm ${NAME_CLIENT} ${NAME_SERVER} ./${DIR_OBJ}/*.o
+	rm -r ${NAME_CLIENT} ${NAME_SERVER} ./${DIR_OBJ}
