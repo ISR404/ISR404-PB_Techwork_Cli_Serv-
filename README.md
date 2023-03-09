@@ -1,9 +1,9 @@
 Before installing you'll need following packages installed:
 
-libpqxx ver 7.7.4 (github: https://github.com/jtv/libpqxx/tree/7.7.4)
-Postgres 14
-libpq (installs with Postgres)
-C++17
+libpqxx ver 7.7.4 (github: https://github.com/jtv/libpqxx/tree/7.7.4),
+Postgres 14,
+libpq (installs with Postgres),
+C++17.
 
 Project assemles with "make".
 
